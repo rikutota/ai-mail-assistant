@@ -1,0 +1,29 @@
+# env
+.env
+.env.*
+!.env.example
+
+# logs
+*.log
+logs/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# dependencies
+node_modules/
+
+# n8n local data
+.n8n/
+data/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# build
+dist/
+build/
+.next/
