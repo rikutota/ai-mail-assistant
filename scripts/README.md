@@ -8,3 +8,12 @@
 - ファイルを書き換える処理は、検査コマンドと明確に分離する
 
 このディレクトリを追加するIssueでは検証スクリプトを作成しません。
+
+## リポジトリ検証
+
+```bash
+node --test scripts/validate-repository.test.mjs
+node scripts/validate-repository.mjs
+```
+
+GitHub Actionsでも同じコマンドを実行する。
