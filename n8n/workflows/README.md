@@ -8,3 +8,9 @@ n8nからエクスポートしたworkflow JSONを配置します。
 - JSONの追加・変更は、対象Issueで明示された場合だけ行う
 
 このディレクトリを追加するIssueではworkflow JSONを作成しません。
+
+## Workflow一覧
+
+| ファイル | 用途 | Credential |
+| --- | --- | --- |
+| `openai-analyze-email.json` | Responses APIのStructured Outputsでメールを分析 | `OPENAI_API_KEY`を実行環境へ設定する |
