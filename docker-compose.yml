@@ -1,0 +1,22 @@
+services:
+  n8n:
+    image: n8nio/n8n:latest
+    init: true
+    ports:
+      - "5678:5678"
+    environment:
+      TZ: ${TZ:-Asia/Tokyo}
+      GENERIC_TIMEZONE: ${GENERIC_TIMEZONE:-Asia/Tokyo}
+      N8N_ENCRYPTION_KEY: ${N8N_ENCRYPTION_KEY:?N8N_ENCRYPTION_KEY is required}
+    volumes:
+      - n8n_data:/home/node/.n8n
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget --spider -q http://127.0.0.1:5678/healthz || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+volumes:
+  n8n_data:
