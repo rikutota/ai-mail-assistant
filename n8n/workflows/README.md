@@ -8,3 +8,9 @@ n8nからエクスポートしたworkflow JSONを配置します。
 - JSONの追加・変更は、対象Issueで明示された場合だけ行う
 
 このディレクトリを追加するIssueではworkflow JSONを作成しません。
+
+## Workflow一覧
+
+| ファイル | 用途 | Credential |
+| --- | --- | --- |
+| `gmail-fetch-unread.json` | Inboxの未読・直近24時間メールを取得し共通形式へ正規化 | import後に`gmail-oauth2-ai-mail-test`を割り当てる |
