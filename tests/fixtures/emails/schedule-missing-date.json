@@ -1,0 +1,9 @@
+{
+  "source": "gmail",
+  "messageId": "fixture-gmail-missing-date-001",
+  "threadId": "fixture-thread-missing-date-001",
+  "sender": "日程担当 <schedule@example.test>",
+  "subject": "次回ミーティングについて",
+  "body": "次回の検証ミーティングを開催します。日時は後ほど連絡します。",
+  "receivedAt": "2026-07-18T09:30:00+09:00"
+}

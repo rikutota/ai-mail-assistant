@@ -1,0 +1,12 @@
+{
+  "description": "同じsourceとmessageIdは重複として扱う",
+  "first": {
+    "source": "gmail",
+    "messageId": "fixture-duplicate-001"
+  },
+  "second": {
+    "source": "gmail",
+    "messageId": "fixture-duplicate-001"
+  },
+  "expected": "duplicate"
+}

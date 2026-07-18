@@ -1,0 +1,8 @@
+{
+  "description": "再試行対象と対象外を区別する匿名APIエラー",
+  "cases": [
+    { "name": "rate-limit", "status": 429, "retry": true },
+    { "name": "server-error", "status": 503, "retry": true },
+    { "name": "authentication-error", "status": 401, "retry": false }
+  ]
+}
