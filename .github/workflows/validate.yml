@@ -1,0 +1,24 @@
+name: Validate repository
+
+on:
+  pull_request:
+  push:
+    branches:
+      - develop
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Test validator
+        run: node --test scripts/validate-repository.test.mjs
+      - name: Validate tracked files
+        run: node scripts/validate-repository.mjs
