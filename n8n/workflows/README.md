@@ -14,3 +14,4 @@ n8nからエクスポートしたworkflow JSONを配置します。
 | ファイル | 用途 | Credential |
 | --- | --- | --- |
 | `openai-analyze-email.json` | Responses APIのStructured Outputsでメールを分析 | `OPENAI_API_KEY`を実行環境へ設定する |
+| `gmail-fetch-unread.json` | Inboxの未読・直近24時間メールを取得し共通形式へ正規化 | import後に`gmail-oauth2-ai-mail-test`を割り当てる |
