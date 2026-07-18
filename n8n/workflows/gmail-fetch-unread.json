@@ -1,0 +1,63 @@
+{
+  "name": "Subflow - Gmail unread mail fetch",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "5e631919-a83a-438b-93b8-0d8478fc8068",
+      "name": "Called by Another Workflow",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [-460, 0]
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "getAll",
+        "returnAll": true,
+        "simple": false,
+        "filters": {
+          "labelIds": ["INBOX"],
+          "readStatus": "unread",
+          "receivedAfter": "={{ $now.minus({ hours: 24 }).toISO() }}",
+          "q": "in:inbox is:unread newer_than:1d"
+        },
+        "options": {}
+      },
+      "id": "f8b17f15-acde-4ea8-90ae-b4b84d8e1b82",
+      "name": "Get unread Gmail messages",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [-220, 0]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const message = $json;\nconst headers = message.payload?.headers ?? message.headers ?? [];\nconst header = (name) => headers.find((entry) => entry.name?.toLowerCase() === name.toLowerCase())?.value ?? null;\nconst decode = (value) => {\n  if (!value) return null;\n  const normalized = value.replace(/-/g, '+').replace(/_/g, '/');\n  return Buffer.from(normalized, 'base64').toString('utf8');\n};\nconst body = message.textPlain ?? message.text ?? decode(message.payload?.body?.data) ?? null;\nconst received = message.internalDate ? new Date(Number(message.internalDate)) : new Date(header('Date'));\nif (!message.id || Number.isNaN(received.getTime())) {\n  throw new Error('validation_error: Gmail message id or received date is missing');\n}\nreturn { json: {\n  source: 'gmail',\n  messageId: message.id,\n  threadId: message.threadId ?? null,\n  sender: header('From'),\n  subject: header('Subject'),\n  body,\n  receivedAt: received.toISOString(),\n} };"
+      },
+      "id": "41b777a8-ac69-47b3-ad73-b8f5311ecba2",
+      "name": "Normalize Gmail message",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [20, 0]
+    }
+  ],
+  "connections": {
+    "Called by Another Workflow": {
+      "main": [[{"node": "Get unread Gmail messages", "type": "main", "index": 0}]]
+    },
+    "Get unread Gmail messages": {
+      "main": [[{"node": "Normalize Gmail message", "type": "main", "index": 0}]]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Asia/Tokyo"
+  },
+  "active": false,
+  "versionId": "85b81c88-867d-482e-9166-81c299847e08",
+  "meta": {
+    "templateCredsSetupCompleted": false
+  },
+  "tags": []
+}

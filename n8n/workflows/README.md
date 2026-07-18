@@ -14,3 +14,4 @@ n8nからエクスポートしたworkflow JSONを配置します。
 | ファイル | 用途 | Credential |
 | --- | --- | --- |
 | `supabase-store-mail.json` | メール処理権を原子的に確保し、分析結果を保存 | import後に`supabase-postgres-ai-mail-test`を割り当てる |
+| `gmail-fetch-unread.json` | Inboxの未読・直近24時間メールを取得し共通形式へ正規化 | import後に`gmail-oauth2-ai-mail-test`を割り当てる |
