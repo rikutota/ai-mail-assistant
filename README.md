@@ -30,3 +30,7 @@ Gmail・Outlookのメールを自動取得し、AIで要約・分類してLINE�
 ## Documents
 
 設計資料は `docs/` 配下で管理します。
+
+| ドキュメント | 内容 |
+| --- | --- |
+| [Codex運用計画](docs/17_Codex運用計画.md) | Codexを使ったQueue Engineeringの運用方針 |
