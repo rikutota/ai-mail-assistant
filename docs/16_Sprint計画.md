@@ -63,7 +63,10 @@
 
 ```text
 docker-compose.yml
-workflows/
+n8n/workflows/
+supabase/migrations/
+tests/fixtures/
+scripts/
 .env.example
 Supabase tables
 ```
