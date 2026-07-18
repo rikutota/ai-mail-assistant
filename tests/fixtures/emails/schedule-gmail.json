@@ -1,0 +1,9 @@
+{
+  "source": "gmail",
+  "messageId": "fixture-gmail-schedule-001",
+  "threadId": "fixture-thread-schedule-001",
+  "sender": "日程担当 <schedule@example.test>",
+  "subject": "検証ミーティングの日程",
+  "body": "2026年7月22日10時から11時まで、オンラインで検証ミーティングを開催します。",
+  "receivedAt": "2026-07-18T09:00:00+09:00"
+}

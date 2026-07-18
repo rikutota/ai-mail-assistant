@@ -1,0 +1,9 @@
+{
+  "source": "outlook",
+  "messageId": "fixture-outlook-promotion-001",
+  "threadId": null,
+  "sender": "テストストア <store@example.test>",
+  "subject": "期間限定キャンペーン",
+  "body": "検証用キャンペーンのお知らせです。対応は不要です。",
+  "receivedAt": "2026-07-18T09:15:00+09:00"
+}

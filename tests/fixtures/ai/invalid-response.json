@@ -1,0 +1,11 @@
+{
+  "description": "必須項目とenumに違反するAI応答",
+  "response": {
+    "summary": "検証用の不正応答",
+    "priority": "Urgent",
+    "category": "unknown-category",
+    "isSchedule": true,
+    "event": null
+  },
+  "expected": "validation_error"
+}

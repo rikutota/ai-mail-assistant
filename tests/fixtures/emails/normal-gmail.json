@@ -1,0 +1,9 @@
+{
+  "source": "gmail",
+  "messageId": "fixture-gmail-normal-001",
+  "threadId": "fixture-thread-normal-001",
+  "sender": "担当者 <sender@example.test>",
+  "subject": "資料送付のお知らせ",
+  "body": "検証用の資料を送付しました。ご確認ください。",
+  "receivedAt": "2026-07-18T08:30:00+09:00"
+}

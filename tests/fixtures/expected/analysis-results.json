@@ -1,0 +1,26 @@
+{
+  "normal-gmail": {
+    "priority": "Medium",
+    "category": "notice",
+    "requiresAction": true,
+    "isSchedule": false,
+    "event": null
+  },
+  "schedule-gmail": {
+    "priority": "Medium",
+    "category": "schedule",
+    "requiresAction": false,
+    "isSchedule": true,
+    "event": {
+      "title": "検証ミーティング",
+      "startDateTime": "2026-07-22T10:00:00+09:00",
+      "endDateTime": "2026-07-22T11:00:00+09:00",
+      "location": "オンライン"
+    }
+  },
+  "schedule-missing-date": {
+    "isSchedule": true,
+    "calendarAction": "skip",
+    "reason": "startDateTime is missing"
+  }
+}
