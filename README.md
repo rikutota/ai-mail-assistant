@@ -105,6 +105,8 @@ LINEへメール要約を通知
 | [デプロイ手順](docs/14_デプロイ手順.md) | n8n・Supabase・外部サービス設定 |
 | [Issue一覧](docs/15_Issue一覧.md) | MVP実装に必要なGitHub Issue一覧 |
 | [Sprint計画](docs/16_Sprint計画.md) | Sprintごとの実装計画 |
+| [Codex運用計画](docs/17_Codex運用計画.md) | Codexを使ったQueue Engineeringの運用方針 |
+| [リポジトリ構成](docs/18_リポジトリ構成.md) | workflow、migration、fixture、検証スクリプトの配置方針 |
 
 ---
 
