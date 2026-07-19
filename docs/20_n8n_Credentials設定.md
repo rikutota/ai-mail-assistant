@@ -30,8 +30,24 @@ workflow import後は人間が各ノードへ対応Credentialを選択する。e
 ### Microsoft Outlook
 
 - 専用テストMicrosoftアカウントを使用する。
-- Graphの委任権限は`Mail.Read`を基本とし、`Mail.ReadWrite`を付与しない。
+- Microsoft EntraのApp registrationでは、対象アカウント種別に合わせたtenantを選択する。
+- Redirect URIはn8nのCredential画面に表示されたOAuth Redirect URLと完全一致させる。
+- Graphの委任権限は`Mail.Read`だけを使用し、Application permissionは使用しない。
+- `Mail.ReadBasic`では本文を取得できないため使用せず、`Mail.ReadWrite`も付与しない。
+- Client ID、Client Secret、Tenant ID、access token、refresh tokenはn8n Credential内だけに保存する。
+- 論理名はテスト環境で`microsoft-outlook-oauth2-ai-mail-test`、本番で`microsoft-outlook-oauth2-ai-mail-prod`とする。
 - 接続確認後も対象メールの`isRead`が変わらないことを確認する。
+
+#### 人間が行う接続確認
+
+1. Microsoft EntraでApp registrationを作成し、Redirect URIを登録する。
+2. Microsoft Graphの委任された`Mail.Read`へ同意する。
+3. n8nでCredentialを作成し、専用テストアカウントでOAuth同意する。
+4. Inboxのテストメールを1件取得し、件名と受信日時を確認する。
+5. 取得前後で`isRead=false`のまま変わらないことを確認する。
+6. workflow exportにcredential ID、token、Client Secretが含まれないことを確認する。
+
+接続確認で401が発生した場合はtenant、Redirect URI、Secretの有効期限を確認する。403の場合は`Mail.Read`の同意状態を確認し、解決のために`Mail.ReadWrite`へ権限を広げない。
 
 ### OpenAI
 

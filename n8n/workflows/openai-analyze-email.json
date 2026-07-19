@@ -1,0 +1,76 @@
+{
+  "name": "OpenAI - Analyze Email",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "openai-analysis-trigger",
+      "name": "Execute Workflow Trigger",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [260, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/responses",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{$env.OPENAI_API_KEY}}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ JSON.stringify({ model: $env.OPENAI_MODEL || 'gpt-5.6-luna', instructions: 'You analyze email for a Japanese email assistant. Return only the requested schema. Never invent a date, time, title, or location. If a schedule is mentioned but its title or start time cannot be determined, set isSchedule=true and event=null. Interpret explicit dates in Asia/Tokyo and emit ISO 8601 with an offset.', input: [{ role: 'user', content: [{ type: 'input_text', text: `Sender: ${$json.sender}\nSubject: ${$json.subject}\nReceivedAt: ${$json.receivedAt}\nBody:\n${$json.body}` }] }], text: { format: { type: 'json_schema', name: 'email_analysis', strict: true, schema: { type: 'object', additionalProperties: false, properties: { summary: { type: 'string', minLength: 1 }, priority: { type: 'string', enum: ['High', 'Medium', 'Low'] }, category: { type: 'string', enum: ['schedule', 'task', 'notice', 'invoice', 'promotion', 'other'] }, requiresAction: { type: 'boolean' }, isSchedule: { type: 'boolean' }, event: { anyOf: [{ type: 'object', additionalProperties: false, properties: { title: { type: 'string', minLength: 1 }, startDateTime: { type: 'string' }, endDateTime: { type: ['string', 'null'] }, location: { type: ['string', 'null'] } }, required: ['title', 'startDateTime', 'endDateTime', 'location'] }, { type: 'null' }] } }, required: ['summary', 'priority', 'category', 'requiresAction', 'isSchedule', 'event'] } } } }) }}",
+        "options": {
+          "timeout": 60000
+        }
+      },
+      "id": "openai-responses-api",
+      "name": "OpenAI Responses API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [500, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const response = $json;\nconst text = response.output?.flatMap((item) => item.content ?? []).find((content) => content.type === 'output_text')?.text ?? response.output_text;\nif (typeof text !== 'string' || !text.trim()) throw new Error('OpenAI response does not contain output_text');\nlet analysis;\ntry { analysis = JSON.parse(text); } catch { throw new Error('OpenAI output is not valid JSON'); }\nconst priorities = new Set(['High', 'Medium', 'Low']);\nconst categories = new Set(['schedule', 'task', 'notice', 'invoice', 'promotion', 'other']);\nconst keys = ['summary', 'priority', 'category', 'requiresAction', 'isSchedule', 'event'];\nif (!keys.every((key) => Object.hasOwn(analysis, key))) throw new Error('OpenAI output is missing required fields');\nif (typeof analysis.summary !== 'string' || !analysis.summary.trim()) throw new Error('summary must be a non-empty string');\nif (!priorities.has(analysis.priority)) throw new Error('priority is invalid');\nif (!categories.has(analysis.category)) throw new Error('category is invalid');\nif (typeof analysis.requiresAction !== 'boolean' || typeof analysis.isSchedule !== 'boolean') throw new Error('boolean fields are invalid');\nif (analysis.isSchedule) {\n  if (!analysis.event || typeof analysis.event.title !== 'string' || !analysis.event.title.trim()) throw new Error('Scheduled email is missing event title');\n  if (typeof analysis.event.startDateTime !== 'string' || Number.isNaN(Date.parse(analysis.event.startDateTime))) throw new Error('Scheduled email is missing a valid startDateTime');\n}\nif (!analysis.isSchedule && analysis.event !== null) throw new Error('Non-schedule email must have a null event');\nreturn [{ json: analysis }];"
+      },
+      "id": "validate-analysis",
+      "name": "Validate Analysis",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [740, 300]
+    }
+  ],
+  "connections": {
+    "Execute Workflow Trigger": {
+      "main": [[{"node": "OpenAI Responses API", "type": "main", "index": 0}]]
+    },
+    "OpenAI Responses API": {
+      "main": [[{"node": "Validate Analysis", "type": "main", "index": 0}]]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataErrorExecution": "none",
+    "saveDataSuccessExecution": "none",
+    "saveManualExecutions": false,
+    "timezone": "Asia/Tokyo"
+  },
+  "active": false,
+  "versionId": "a6ae520c-b51a-4b5a-a8ef-eef1283dad4d",
+  "meta": {
+    "templateCredsSetupCompleted": false
+  },
+  "tags": []
+}
