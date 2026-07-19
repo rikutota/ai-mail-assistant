@@ -1,0 +1,66 @@
+{
+  "name": "Supabase - Store Mail and Claim Processing",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "store-mail-trigger",
+      "name": "Execute Workflow Trigger",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO mail_logs (source, message_id, thread_id, sender_name, sender_email, subject, summary, priority, category, requires_action, is_schedule, received_at, processed_status, processed_at)\nVALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, 'processed', now())\nON CONFLICT (source, message_id) DO NOTHING\nRETURNING id, source, message_id, true AS processing_claimed;",
+        "options": {
+          "queryReplacement": "={{ [$json.source, $json.messageId, $json.threadId || null, $json.senderName || null, $json.senderEmail || $json.sender || null, $json.subject || null, $json.summary || null, $json.priority || null, $json.category || null, Boolean($json.requiresAction), Boolean($json.isSchedule), $json.receivedAt || null] }}"
+        }
+      },
+      "id": "insert-mail-log",
+      "name": "Insert Mail Log",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [480, 300],
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {"caseSensitive": true, "leftValue": "", "typeValidation": "strict", "version": 2},
+          "conditions": [{"id": "claim-result", "leftValue": "={{ $json.processing_claimed }}", "rightValue": true, "operator": {"type": "boolean", "operation": "true", "singleValue": true}}],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "was-inserted",
+      "name": "Processing Claimed?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [700, 300]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT id, source, message_id, false AS processing_claimed\nFROM mail_logs\nWHERE source = $1 AND message_id = $2\nLIMIT 1;",
+        "options": {"queryReplacement": "={{ [$('Execute Workflow Trigger').item.json.source, $('Execute Workflow Trigger').item.json.messageId] }}"}
+      },
+      "id": "load-existing-mail-log",
+      "name": "Load Existing Mail Log",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [940, 420]
+    }
+  ],
+  "connections": {
+    "Execute Workflow Trigger": {"main": [[{"node": "Insert Mail Log", "type": "main", "index": 0}]]},
+    "Insert Mail Log": {"main": [[{"node": "Processing Claimed?", "type": "main", "index": 0}]]},
+    "Processing Claimed?": {"main": [[], [{"node": "Load Existing Mail Log", "type": "main", "index": 0}]]}
+  },
+  "pinData": {},
+  "settings": {"executionOrder": "v1", "saveDataErrorExecution": "none", "saveDataSuccessExecution": "none", "saveManualExecutions": false, "timezone": "Asia/Tokyo"},
+  "active": false,
+  "versionId": "6670063a-7530-46e8-9ee8-dd67241eebcf",
+  "meta": {"templateCredsSetupCompleted": false},
+  "tags": []
+}

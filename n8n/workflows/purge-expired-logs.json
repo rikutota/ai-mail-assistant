@@ -1,0 +1,43 @@
+{
+  "name": "Maintenance - Purge Expired Logs",
+  "nodes": [
+    {
+      "parameters": {"rule": {"interval": [{"field": "cronExpression", "expression": "0 2 * * *"}]}},
+      "id": "daily-retention-schedule",
+      "name": "Daily 02:00 JST",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [240, 220]
+    },
+    {
+      "parameters": {},
+      "id": "manual-retention-trigger",
+      "name": "Execute Workflow Trigger",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [240, 380]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "WITH params AS (\n  SELECT\n    ((date_trunc('day', now() AT TIME ZONE 'Asia/Tokyo') - interval '90 days') AT TIME ZONE 'Asia/Tokyo') AS cutoff,\n    $1::boolean AS dry_run\n),\ndeleted_calendar AS (\n  DELETE FROM calendar_logs WHERE created_at < (SELECT cutoff FROM params) AND NOT (SELECT dry_run FROM params) RETURNING 1\n),\ndeleted_errors AS (\n  DELETE FROM error_logs WHERE created_at < (SELECT cutoff FROM params) AND NOT (SELECT dry_run FROM params) AND (SELECT count(*) FROM deleted_calendar) >= 0 RETURNING 1\n),\ndeleted_notifications AS (\n  DELETE FROM notification_logs WHERE created_at < (SELECT cutoff FROM params) AND NOT (SELECT dry_run FROM params) AND (SELECT count(*) FROM deleted_errors) >= 0 RETURNING 1\n),\ndeleted_mail AS (\n  DELETE FROM mail_logs WHERE created_at < (SELECT cutoff FROM params) AND NOT (SELECT dry_run FROM params) AND (SELECT count(*) FROM deleted_notifications) >= 0 RETURNING 1\n),\ndeleted_runs AS (\n  DELETE FROM workflow_runs WHERE created_at < (SELECT cutoff FROM params) AND NOT (SELECT dry_run FROM params) AND (SELECT count(*) FROM deleted_mail) >= 0 RETURNING 1\n)\nSELECT\n  params.dry_run,\n  params.cutoff,\n  CASE WHEN params.dry_run THEN (SELECT count(*) FROM calendar_logs WHERE created_at < params.cutoff) ELSE (SELECT count(*) FROM deleted_calendar) END AS calendar_logs_count,\n  CASE WHEN params.dry_run THEN (SELECT count(*) FROM error_logs WHERE created_at < params.cutoff) ELSE (SELECT count(*) FROM deleted_errors) END AS error_logs_count,\n  CASE WHEN params.dry_run THEN (SELECT count(*) FROM notification_logs WHERE created_at < params.cutoff) ELSE (SELECT count(*) FROM deleted_notifications) END AS notification_logs_count,\n  CASE WHEN params.dry_run THEN (SELECT count(*) FROM mail_logs WHERE created_at < params.cutoff) ELSE (SELECT count(*) FROM deleted_mail) END AS mail_logs_count,\n  CASE WHEN params.dry_run THEN (SELECT count(*) FROM workflow_runs WHERE created_at < params.cutoff) ELSE (SELECT count(*) FROM deleted_runs) END AS workflow_runs_count\nFROM params;",
+        "options": {"queryReplacement": "={{ [($env.LOG_RETENTION_DRY_RUN || 'true').toLowerCase() !== 'false'] }}"}
+      },
+      "id": "purge-expired-logs",
+      "name": "Purge Expired Logs",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [520, 300]
+    }
+  ],
+  "connections": {
+    "Daily 02:00 JST": {"main": [[{"node": "Purge Expired Logs", "type": "main", "index": 0}]]},
+    "Execute Workflow Trigger": {"main": [[{"node": "Purge Expired Logs", "type": "main", "index": 0}]]}
+  },
+  "pinData": {},
+  "settings": {"executionOrder": "v1", "saveDataErrorExecution": "none", "saveDataSuccessExecution": "none", "saveManualExecutions": false, "timezone": "Asia/Tokyo"},
+  "active": false,
+  "versionId": "aa8f93f1-eae7-4ea6-bbd0-fab42e52b9ea",
+  "meta": {"templateCredsSetupCompleted": false},
+  "tags": []
+}
