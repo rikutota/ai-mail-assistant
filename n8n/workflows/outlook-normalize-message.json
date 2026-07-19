@@ -1,0 +1,30 @@
+{
+  "name": "Outlook - Normalize Message",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "outlook-normalize-trigger",
+      "name": "Execute Workflow Trigger",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [260, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "return $input.all().map((item) => {\n  const message = item.json;\n  if (typeof message.id !== 'string' || !message.id.trim()) throw new Error('Outlook message id is required');\n  if (typeof message.receivedDateTime !== 'string' || Number.isNaN(Date.parse(message.receivedDateTime))) throw new Error('Outlook receivedDateTime is invalid');\n  const address = message.from?.emailAddress?.address ?? '';\n  const name = message.from?.emailAddress?.name ?? '';\n  const sender = name && address ? `${name} <${address}>` : address || name;\n  return { json: {\n    source: 'outlook',\n    messageId: message.id,\n    threadId: typeof message.conversationId === 'string' && message.conversationId ? message.conversationId : null,\n    sender,\n    subject: typeof message.subject === 'string' ? message.subject : '',\n    body: typeof message.body?.content === 'string' ? message.body.content : '',\n    receivedAt: new Date(message.receivedDateTime).toISOString()\n  } };\n});"
+      },
+      "id": "normalize-outlook-message",
+      "name": "Normalize Outlook Message",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [520, 300]
+    }
+  ],
+  "connections": {"Execute Workflow Trigger": {"main": [[{"node": "Normalize Outlook Message", "type": "main", "index": 0}]]}},
+  "pinData": {},
+  "settings": {"executionOrder": "v1", "saveDataErrorExecution": "none", "saveDataSuccessExecution": "none", "saveManualExecutions": false, "timezone": "Asia/Tokyo"},
+  "active": false,
+  "versionId": "5d445280-0376-481f-b176-46764d49a441",
+  "meta": {"templateCredsSetupCompleted": false},
+  "tags": []
+}
