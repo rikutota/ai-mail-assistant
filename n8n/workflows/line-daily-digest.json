@@ -1,0 +1,75 @@
+{
+  "name": "LINE - Send Daily Mail Digest",
+  "nodes": [
+    {"parameters": {}, "id": "line-digest-trigger", "name": "Execute Workflow Trigger", "type": "n8n-nodes-base.executeWorkflowTrigger", "typeVersion": 1.1, "position": [220, 300]},
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "WITH bounds AS (\n  SELECT\n    date_trunc('day', now() AT TIME ZONE 'Asia/Tokyo') AT TIME ZONE 'Asia/Tokyo' AS day_start,\n    (date_trunc('day', now() AT TIME ZONE 'Asia/Tokyo') + interval '1 day') AT TIME ZONE 'Asia/Tokyo' AS day_end\n), mails AS (\n  SELECT * FROM mail_logs WHERE received_at >= (SELECT day_start FROM bounds) AND received_at < (SELECT day_end FROM bounds)\n)\nSELECT\n  count(*)::int AS total_count,\n  count(*) FILTER (WHERE priority = 'High')::int AS high_count,\n  count(*) FILTER (WHERE priority <> 'High' OR priority IS NULL)::int AS normal_count,\n  count(*) FILTER (WHERE processed_status = 'failed')::int AS error_count,\n  coalesce((SELECT count(*)::int FROM calendar_logs c JOIN mails m ON m.id = c.mail_log_id WHERE c.status = 'created'), 0) AS calendar_created_count,\n  coalesce(json_agg(json_build_object('subject', subject, 'summary', summary, 'priority', priority) ORDER BY received_at DESC) FILTER (WHERE priority = 'High'), '[]'::json) AS high_items\nFROM mails;",
+        "options": {}
+      },
+      "id": "aggregate-daily-mail", "name": "Aggregate Daily Mail", "type": "n8n-nodes-base.postgres", "typeVersion": 2.6, "position": [440, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const row = $json;\nconst highItems = Array.isArray(row.high_items) ? row.high_items : [];\nconst lines = [\n  'AIメールアシスタント 日次ダイジェスト',\n  `処理件数: ${row.total_count ?? 0}`,\n  `重要: ${row.high_count ?? 0} / 通常: ${row.normal_count ?? 0}`,\n  `予定登録: ${row.calendar_created_count ?? 0}`,\n  `簡易エラー: ${row.error_count ?? 0}`,\n];\nif (highItems.length) {\n  lines.push('', '重要メール');\n  for (const item of highItems.slice(0, 10)) {\n    const subject = String(item.subject ?? '(件名なし)').replace(/[\\r\\n]+/g, ' ').slice(0, 80);\n    const summary = String(item.summary ?? '').replace(/[\\r\\n]+/g, ' ').slice(0, 160);\n    lines.push(`- ${subject}${summary ? `: ${summary}` : ''}`);\n  }\n}\nreturn [{ json: { ...row, digestText: lines.join('\\n'), retryKey: String($('Execute Workflow Trigger').item.json.workflowRunId ?? '') } }];"
+      },
+      "id": "build-line-digest", "name": "Build LINE Digest", "type": "n8n-nodes-base.code", "typeVersion": 2, "position": [660, 300]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT EXISTS (SELECT 1 FROM notification_logs WHERE workflow_run_id = $1 AND channel = 'line' AND status = 'sent') AS already_sent;",
+        "options": {"queryReplacement": "={{ [$('Execute Workflow Trigger').item.json.workflowRunId] }}"}
+      },
+      "id": "check-line-digest", "name": "Check Digest Sent", "type": "n8n-nodes-base.postgres", "typeVersion": 2.6, "position": [880, 300]
+    },
+    {
+      "parameters": {"conditions": {"options": {"caseSensitive": true, "leftValue": "", "typeValidation": "strict", "version": 2}, "conditions": [{"id": "not-sent", "leftValue": "={{ $json.already_sent }}", "rightValue": false, "operator": {"type": "boolean", "operation": "false", "singleValue": true}}], "combinator": "and"}, "options": {}},
+      "id": "digest-not-sent", "name": "Digest Not Sent?", "type": "n8n-nodes-base.if", "typeVersion": 2.2, "position": [1080, 300]
+    },
+    {
+      "parameters": {
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "method": "POST",
+        "url": "https://api.line.me/v2/bot/message/push",
+        "sendHeaders": true,
+        "headerParameters": {"parameters": [{"name": "X-Line-Retry-Key", "value": "={{ $('Build LINE Digest').item.json.retryKey }}"}]},
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ JSON.stringify({ to: $env.LINE_USER_ID, messages: [{ type: 'text', text: $('Build LINE Digest').item.json.digestText }] }) }}",
+        "options": {"timeout": 60000}
+      },
+      "id": "send-line-digest", "name": "Send LINE Digest", "type": "n8n-nodes-base.httpRequest", "typeVersion": 4.2, "position": [1300, 220], "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {"jsCode": "const status = Number($json.statusCode ?? $json.httpCode ?? $json.error?.statusCode);\nif (status === 409) return [{ json: { accepted: true, duplicate: true } }];\nthrow new Error(`LINE digest delivery failed (status: ${Number.isFinite(status) ? status : 'unknown'})`);"},
+      "id": "handle-line-error", "name": "Handle LINE Error", "type": "n8n-nodes-base.code", "typeVersion": 2, "position": [1520, 340]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO notification_logs (workflow_run_id, channel, status, message, sent_at)\nSELECT $1, 'line', 'sent', $2, now()\nWHERE NOT EXISTS (SELECT 1 FROM notification_logs WHERE workflow_run_id = $1 AND channel = 'line' AND status = 'sent')\nRETURNING id, status, sent_at;",
+        "options": {"queryReplacement": "={{ [$('Execute Workflow Trigger').item.json.workflowRunId, $('Build LINE Digest').item.json.digestText] }}"}
+      },
+      "id": "store-line-notification", "name": "Store LINE Notification", "type": "n8n-nodes-base.postgres", "typeVersion": 2.6, "position": [1740, 220], "alwaysOutputData": true
+    }
+  ],
+  "connections": {
+    "Execute Workflow Trigger": {"main": [[{"node": "Aggregate Daily Mail", "type": "main", "index": 0}]]},
+    "Aggregate Daily Mail": {"main": [[{"node": "Build LINE Digest", "type": "main", "index": 0}]]},
+    "Build LINE Digest": {"main": [[{"node": "Check Digest Sent", "type": "main", "index": 0}]]},
+    "Check Digest Sent": {"main": [[{"node": "Digest Not Sent?", "type": "main", "index": 0}]]},
+    "Digest Not Sent?": {"main": [[{"node": "Send LINE Digest", "type": "main", "index": 0}], []]},
+    "Send LINE Digest": {"main": [[{"node": "Store LINE Notification", "type": "main", "index": 0}], [{"node": "Handle LINE Error", "type": "main", "index": 0}]]},
+    "Handle LINE Error": {"main": [[{"node": "Store LINE Notification", "type": "main", "index": 0}]]}
+  },
+  "pinData": {},
+  "settings": {"executionOrder": "v1", "saveDataErrorExecution": "none", "saveDataSuccessExecution": "none", "saveManualExecutions": false, "timezone": "Asia/Tokyo"},
+  "active": false,
+  "versionId": "c47925d8-f489-48f4-919e-3a39dd329bf7",
+  "meta": {"templateCredsSetupCompleted": false},
+  "tags": []
+}
