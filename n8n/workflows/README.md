@@ -14,3 +14,4 @@ n8nからエクスポートしたworkflow JSONを配置します。
 | ファイル | 用途 | Credential |
 | --- | --- | --- |
 | `gmail-fetch-unread.json` | Inboxの未読・直近24時間メールを取得し共通形式へ正規化 | import後に`gmail-oauth2-ai-mail-test`を割り当てる |
+| `outlook-fetch-unread.json` | Inboxの未読・直近24時間Outlookメールを既読化せず取得 | import後に`microsoft-outlook-oauth2-ai-mail-test`を割り当てる |
