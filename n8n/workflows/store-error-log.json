@@ -1,0 +1,21 @@
+{
+  "name": "Common - Store Safe Error Log",
+  "nodes": [
+    {"parameters": {}, "id": "error-log-trigger", "name": "Execute Workflow Trigger", "type": "n8n-nodes-base.executeWorkflowTrigger", "typeVersion": 1.1, "position": [220, 300]},
+    {
+      "parameters": {"jsCode": "const stages = new Set(['gmail', 'outlook', 'openai', 'supabase', 'calendar', 'line', 'validation', 'orchestrator']);\nconst sources = new Set(['gmail', 'outlook']);\nreturn $input.all().map((item) => {\n  const input = item.json;\n  const stage = stages.has(input.stage) ? input.stage : 'orchestrator';\n  const source = sources.has(input.source) ? input.source : null;\n  const errorCode = String(input.errorCode ?? 'unknown_error').replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 64) || 'unknown_error';\n  const allowedSummaries = {\n    retry_exhausted: 'External service failed after retry limit',\n    authentication_failed: 'External service authentication failed',\n    permission_denied: 'External service permission was denied',\n    validation_failed: 'Input or response validation failed',\n    service_failed: 'External service request failed',\n    database_failed: 'Database operation failed'\n  };\n  const summaryKey = String(input.summaryKey ?? 'service_failed');\n  const errorSummary = allowedSummaries[summaryKey] ?? allowedSummaries.service_failed;\n  const retryCount = Math.min(3, Math.max(0, Number.parseInt(input.retryCount ?? 0, 10) || 0));\n  const safe = { executionId: String(input.executionId ?? '').slice(0, 128) || null, source, messageId: typeof input.messageId === 'string' ? input.messageId.slice(0, 255) : null, mailLogId: typeof input.mailLogId === 'string' ? input.mailLogId : null, stage, errorCode, errorSummary, retryCount };\n  console.error(JSON.stringify({ stage: safe.stage, errorCode: safe.errorCode, errorSummary: safe.errorSummary, retryCount: safe.retryCount }));\n  return { json: safe };\n});"},
+      "id": "sanitize-error-log", "name": "Sanitize Error Log", "type": "n8n-nodes-base.code", "typeVersion": 2, "position": [460, 300]
+    },
+    {
+      "parameters": {"operation": "executeQuery", "query": "INSERT INTO error_logs (execution_id, mail_log_id, source, message_id, stage, error_code, error_summary, retry_count, workflow_name, node_name, error_type, error_message, occurred_at)\nVALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'mail-orchestrator', $5, CASE $5 WHEN 'gmail' THEN 'gmail_error' WHEN 'outlook' THEN 'outlook_error' WHEN 'openai' THEN 'openai_error' WHEN 'calendar' THEN 'calendar_error' WHEN 'line' THEN 'line_error' WHEN 'supabase' THEN 'supabase_error' WHEN 'validation' THEN 'validation_error' ELSE 'unknown_error' END, $7, now())\nRETURNING id, execution_id AS \"executionId\", stage, error_code AS \"errorCode\", retry_count AS \"retryCount\", occurred_at AS \"occurredAt\";", "options": {"queryReplacement": "={{ [$json.executionId, $json.mailLogId, $json.source, $json.messageId, $json.stage, $json.errorCode, $json.errorSummary, $json.retryCount] }}"}},
+      "id": "insert-error-log", "name": "Insert Error Log", "type": "n8n-nodes-base.postgres", "typeVersion": 2.6, "position": [700, 300]
+    }
+  ],
+  "connections": {"Execute Workflow Trigger": {"main": [[{"node": "Sanitize Error Log", "type": "main", "index": 0}]]}, "Sanitize Error Log": {"main": [[{"node": "Insert Error Log", "type": "main", "index": 0}]]}},
+  "pinData": {},
+  "settings": {"executionOrder": "v1", "saveDataErrorExecution": "none", "saveDataSuccessExecution": "none", "saveManualExecutions": false, "timezone": "Asia/Tokyo"},
+  "active": false,
+  "versionId": "9b718f7d-ffca-43fe-a72f-45265654928b",
+  "meta": {"templateCredsSetupCompleted": false},
+  "tags": []
+}

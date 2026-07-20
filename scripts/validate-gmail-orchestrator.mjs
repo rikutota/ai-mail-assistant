@@ -23,6 +23,7 @@ for (const [name, envName] of Object.entries(expected)) {
   assert.equal(node?.type, 'n8n-nodes-base.executeWorkflow', `${name} must execute a sub-workflow`);
   assert.match(node.parameters.workflowId.value, /\$env\.API_RETRY_WRAPPER_WORKFLOW_ID/);
   assert.match(node.parameters.workflowInputs.value.targetWorkflowId, new RegExp(`\\$env\\.${envName}`));
+  assert.equal(typeof node.parameters.workflowInputs.value.stage, 'string', `${name} must provide an error stage`);
   assert.ok(!('credentials' in node), `${name} must not export credentials`);
   assert.equal(node.parameters.options.waitForSubWorkflow, true);
 }

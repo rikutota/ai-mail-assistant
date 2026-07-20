@@ -38,7 +38,9 @@ assert.match(wrapperNodes.get('Classify Target Error').parameters.workflowId.val
 assert.equal(wrapperNodes.get('Execute Target Workflow').onError, 'continueErrorOutput');
 assert.match(String(wrapperNodes.get('Wait Before Retry').parameters.amount), /retryDelaySeconds/);
 assert.equal(wrapper.connections['Prepare Next Attempt'].main[0][0].node, 'Execute Target Workflow');
-assert.equal(wrapper.connections['Should Retry?'].main[1][0].node, 'Final Failure');
+assert.equal(wrapper.connections['Should Retry?'].main[1][0].node, 'Store Final Error');
+assert.match(wrapperNodes.get('Store Final Error').parameters.workflowId.value, /ERROR_LOG_WORKFLOW_ID/);
+assert.equal(wrapper.connections['Store Final Error'].main[0][0].node, 'Final Failure');
 assert.ok(!JSON.stringify(wrapper).includes('credentials'));
 
 console.log('API retry wrapper validation passed.');
