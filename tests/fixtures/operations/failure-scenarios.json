@@ -1,0 +1,11 @@
+{
+  "cases": [
+    {"name": "rate-limit", "statusCode": 429, "attempt": 1, "shouldRetry": true, "delaySeconds": 1},
+    {"name": "server-error", "statusCode": 503, "attempt": 2, "shouldRetry": true, "delaySeconds": 2},
+    {"name": "timeout", "errorCode": "ETIMEDOUT", "attempt": 1, "shouldRetry": true, "delaySeconds": 1},
+    {"name": "authentication", "statusCode": 401, "attempt": 1, "shouldRetry": false, "delaySeconds": 0},
+    {"name": "permission", "statusCode": 403, "attempt": 1, "shouldRetry": false, "delaySeconds": 0},
+    {"name": "third-retry", "statusCode": 503, "attempt": 3, "shouldRetry": true, "delaySeconds": 4},
+    {"name": "retry-exhausted", "statusCode": 503, "attempt": 4, "shouldRetry": false, "delaySeconds": 0, "retryExhausted": true}
+  ]
+}

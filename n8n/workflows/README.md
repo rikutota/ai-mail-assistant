@@ -23,6 +23,7 @@ n8nからエクスポートしたworkflow JSONを配置します。
 | `line-daily-digest.json` | JST日次でメール結果を集約しLINEへ一度だけ通知 | import後にLINE Header AuthとPostgresの各Credentialを割り当てる |
 | `api-retry-policy.json` | 429・5xx・timeoutの最大3回指数バックオフ判定 | Credential不要 |
 | `execute-workflow-with-retry.json` | 外部API sub-workflowを判定結果に従って再実行 | import後にretry policy IDを環境変数へ設定する |
+| `store-error-log.json` | サービス失敗を安全な共通形式でDBとn8nログへ記録 | import後にPostgres Credentialを割り当てる |
 | `gmail-daily-orchestrator.json` | 毎日08:00 JSTにGmail・Outlookの取得、共通claim・AI分析・確定保存・Calendar・LINEを統括 | import後に各sub-workflow IDを環境変数へ設定する |
 
 保守workflowは`LOG_RETENTION_DRY_RUN=true`で件数だけ確認し、対象件数のレビュー後に実行環境で`false`へ変更する。
