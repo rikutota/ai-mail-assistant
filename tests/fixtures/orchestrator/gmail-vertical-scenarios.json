@@ -1,0 +1,34 @@
+{
+  "scenarios": [
+    {
+      "name": "normal-and-schedule",
+      "messages": ["normal-gmail.json", "schedule-gmail.json"],
+      "failures": {},
+      "expected": {"claimed": 2, "analyzed": 2, "finalized": 2, "calendar": 1, "line": 1}
+    },
+    {
+      "name": "zero-mail",
+      "messages": [],
+      "failures": {},
+      "expected": {"claimed": 0, "analyzed": 0, "finalized": 0, "calendar": 0, "line": 1}
+    },
+    {
+      "name": "duplicate-input",
+      "messages": ["normal-gmail.json", "normal-gmail.json"],
+      "failures": {},
+      "expected": {"claimed": 1, "analyzed": 1, "finalized": 1, "calendar": 0, "line": 1}
+    },
+    {
+      "name": "openai-failure-continues",
+      "messages": ["normal-gmail.json", "schedule-gmail.json"],
+      "failures": {"openai": ["fixture-gmail-normal-001"]},
+      "expected": {"claimed": 2, "analyzed": 1, "finalized": 1, "calendar": 1, "line": 1}
+    },
+    {
+      "name": "calendar-failure-continues",
+      "messages": ["schedule-gmail.json", "normal-gmail.json"],
+      "failures": {"calendar": ["fixture-gmail-schedule-001"]},
+      "expected": {"claimed": 2, "analyzed": 2, "finalized": 2, "calendar": 0, "line": 1}
+    }
+  ]
+}
