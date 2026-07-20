@@ -19,5 +19,6 @@ n8nからエクスポートしたworkflow JSONを配置します。
 | `purge-expired-logs.json` | JST基準で90日を超えたログを外部キー順に削除 | import後に`supabase-postgres-ai-mail-test`を割り当てる |
 | `google-calendar-register-event.json` | 検証済み予定を冪等登録し結果を保存 | import後にCalendarとPostgresの各Credentialを割り当てる |
 | `line-daily-digest.json` | JST日次でメール結果を集約しLINEへ一度だけ通知 | import後にLINE Header AuthとPostgresの各Credentialを割り当てる |
+| `gmail-daily-orchestrator.json` | 毎日08:00 JSTにGmailの取得・claim・AI分析・確定保存・Calendar・LINEを統括 | import後に各sub-workflow IDを環境変数へ設定する |
 
 保守workflowは`LOG_RETENTION_DRY_RUN=true`で件数だけ確認し、対象件数のレビュー後に実行環境で`false`へ変更する。
