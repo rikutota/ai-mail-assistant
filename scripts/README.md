@@ -15,6 +15,7 @@
 node --test scripts/validate-repository.test.mjs
 node scripts/validate-repository.mjs
 node --test scripts/validate-gmail-vertical.test.mjs
+node scripts/validate-all.mjs
 ```
 
 GitHub Actionsでも同じコマンドを実行する。
