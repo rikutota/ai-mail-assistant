@@ -107,7 +107,7 @@ LINEへメール要約を通知
 | [Sprint計画](docs/16_Sprint計画.md) | Sprintごとの実装計画 |
 | [Codex運用計画](docs/17_Codex運用計画.md) | Codexを使ったQueue Engineeringの運用方針 |
 | [リポジトリ構成](docs/18_リポジトリ構成.md) | workflow、migration、fixture、検証スクリプトの配置方針 |
-| [n8nローカル実行](docs/19_n8nローカル実行.md) | Docker Composeによるn8nの起動・停止・永続化 |
+| [n8nローカル実行](docs/19_n8nローカル実行.md) | Docker Composeの起動・停止、バックアップ、workflow import、migration適用、credential登録 |
 
 ---
 
