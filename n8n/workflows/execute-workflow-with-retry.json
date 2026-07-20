@@ -1,0 +1,49 @@
+{
+  "name": "Common - Execute Workflow with Retry",
+  "nodes": [
+    {"parameters": {}, "id": "retry-wrapper-trigger", "name": "Execute Workflow Trigger", "type": "n8n-nodes-base.executeWorkflowTrigger", "typeVersion": 1.1, "position": [220, 300]},
+    {
+      "parameters": {"jsCode": "return $input.all().map((item) => {\n  if (typeof item.json.targetWorkflowId !== 'string' || !item.json.targetWorkflowId.trim()) throw new Error('targetWorkflowId is required');\n  return { json: { ...item.json, retryAttempt: Number(item.json.retryAttempt ?? 1) } };\n});"},
+      "id": "initialize-retry", "name": "Initialize Retry", "type": "n8n-nodes-base.code", "typeVersion": 2, "position": [440, 300]
+    },
+    {
+      "parameters": {"workflowId": {"__rl": true, "value": "={{ $json.targetWorkflowId }}", "mode": "id"}, "options": {"waitForSubWorkflow": true}},
+      "id": "execute-target-workflow", "name": "Execute Target Workflow", "type": "n8n-nodes-base.executeWorkflow", "typeVersion": 1.2, "position": [660, 300], "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {"workflowId": {"__rl": true, "value": "={{ $env.API_RETRY_POLICY_WORKFLOW_ID }}", "mode": "id"}, "options": {"waitForSubWorkflow": true}},
+      "id": "classify-target-error", "name": "Classify Target Error", "type": "n8n-nodes-base.executeWorkflow", "typeVersion": 1.2, "position": [880, 420]
+    },
+    {
+      "parameters": {"conditions": {"options": {"caseSensitive": true, "leftValue": "", "typeValidation": "strict", "version": 2}, "conditions": [{"id": "should-retry", "leftValue": "={{ $json.shouldRetry }}", "rightValue": true, "operator": {"type": "boolean", "operation": "true", "singleValue": true}}], "combinator": "and"}, "options": {}},
+      "id": "should-retry-target", "name": "Should Retry?", "type": "n8n-nodes-base.if", "typeVersion": 2.2, "position": [1100, 420]
+    },
+    {
+      "parameters": {"amount": "={{ $json.retryDelaySeconds }}", "unit": "seconds"},
+      "id": "wait-before-retry", "name": "Wait Before Retry", "type": "n8n-nodes-base.wait", "typeVersion": 1.1, "position": [1320, 340], "webhookId": "d4695c58-ff38-41dd-aeff-04f6a357e092"
+    },
+    {
+      "parameters": {"jsCode": "return $input.all().map((item) => ({ json: { ...item.json, retryAttempt: item.json.nextRetryAttempt } }));"},
+      "id": "prepare-next-attempt", "name": "Prepare Next Attempt", "type": "n8n-nodes-base.code", "typeVersion": 2, "position": [1540, 340]
+    },
+    {
+      "parameters": {"errorType": "errorObject", "errorObject": "={{ { name: 'ExternalApiError', message: `External API failed after ${$json.retryAttempt} attempt(s)`, statusCode: $json.statusCode, retryable: $json.retryable } }}"},
+      "id": "fail-target-workflow", "name": "Final Failure", "type": "n8n-nodes-base.stopAndError", "typeVersion": 1, "position": [1320, 500]
+    }
+  ],
+  "connections": {
+    "Execute Workflow Trigger": {"main": [[{"node": "Initialize Retry", "type": "main", "index": 0}]]},
+    "Initialize Retry": {"main": [[{"node": "Execute Target Workflow", "type": "main", "index": 0}]]},
+    "Execute Target Workflow": {"main": [[], [{"node": "Classify Target Error", "type": "main", "index": 0}]]},
+    "Classify Target Error": {"main": [[{"node": "Should Retry?", "type": "main", "index": 0}]]},
+    "Should Retry?": {"main": [[{"node": "Wait Before Retry", "type": "main", "index": 0}], [{"node": "Final Failure", "type": "main", "index": 0}]]},
+    "Wait Before Retry": {"main": [[{"node": "Prepare Next Attempt", "type": "main", "index": 0}]]},
+    "Prepare Next Attempt": {"main": [[{"node": "Execute Target Workflow", "type": "main", "index": 0}]]}
+  },
+  "pinData": {},
+  "settings": {"executionOrder": "v1", "saveDataErrorExecution": "none", "saveDataSuccessExecution": "none", "saveManualExecutions": false, "timezone": "Asia/Tokyo"},
+  "active": false,
+  "versionId": "b4110d5d-338a-4ce7-895f-416bdf35d2ae",
+  "meta": {"templateCredsSetupCompleted": false},
+  "tags": []
+}

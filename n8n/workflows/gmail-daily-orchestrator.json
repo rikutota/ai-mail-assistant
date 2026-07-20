@@ -10,7 +10,7 @@
       "position": [0, 300]
     },
     {
-      "parameters": {"workflowId": {"__rl": true, "value": "={{ $env.GMAIL_FETCH_WORKFLOW_ID }}", "mode": "id"}, "options": {"waitForSubWorkflow": true}},
+      "parameters": {"workflowId": {"__rl": true, "value": "={{ $env.API_RETRY_WRAPPER_WORKFLOW_ID }}", "mode": "id"}, "workflowInputs": {"mappingMode": "defineBelow", "value": {"targetWorkflowId": "={{ $env.GMAIL_FETCH_WORKFLOW_ID }}"}, "matchingColumns": [], "schema": []}, "options": {"waitForSubWorkflow": true}},
       "id": "execute-gmail-fetch",
       "name": "Fetch Gmail",
       "type": "n8n-nodes-base.executeWorkflow",
@@ -44,7 +44,7 @@
       "position": [880, 360]
     },
     {
-      "parameters": {"workflowId": {"__rl": true, "value": "={{ $env.SUPABASE_MAIL_WORKFLOW_ID }}", "mode": "id"}, "workflowInputs": {"mappingMode": "defineBelow", "value": {"operation": "claim", "source": "={{ $json.source }}", "messageId": "={{ $json.messageId }}", "threadId": "={{ $json.threadId }}", "sender": "={{ $json.sender }}", "subject": "={{ $json.subject }}", "receivedAt": "={{ $json.receivedAt }}"}, "matchingColumns": [], "schema": []}, "options": {"waitForSubWorkflow": true}},
+      "parameters": {"workflowId": {"__rl": true, "value": "={{ $env.API_RETRY_WRAPPER_WORKFLOW_ID }}", "mode": "id"}, "workflowInputs": {"mappingMode": "defineBelow", "value": {"targetWorkflowId": "={{ $env.SUPABASE_MAIL_WORKFLOW_ID }}", "operation": "claim", "source": "={{ $json.source }}", "messageId": "={{ $json.messageId }}", "threadId": "={{ $json.threadId }}", "sender": "={{ $json.sender }}", "subject": "={{ $json.subject }}", "receivedAt": "={{ $json.receivedAt }}"}, "matchingColumns": [], "schema": []}, "options": {"waitForSubWorkflow": true}},
       "id": "execute-mail-claim",
       "name": "Claim Mail",
       "type": "n8n-nodes-base.executeWorkflow",
@@ -69,7 +69,7 @@
       "position": [1540, 180]
     },
     {
-      "parameters": {"workflowId": {"__rl": true, "value": "={{ $env.OPENAI_ANALYZE_WORKFLOW_ID }}", "mode": "id"}, "options": {"waitForSubWorkflow": true}},
+      "parameters": {"workflowId": {"__rl": true, "value": "={{ $env.API_RETRY_WRAPPER_WORKFLOW_ID }}", "mode": "id"}, "workflowInputs": {"mappingMode": "defineBelow", "value": {"targetWorkflowId": "={{ $env.OPENAI_ANALYZE_WORKFLOW_ID }}", "source": "={{ $json.source }}", "messageId": "={{ $json.messageId }}", "sender": "={{ $json.sender }}", "subject": "={{ $json.subject }}", "body": "={{ $json.body }}", "receivedAt": "={{ $json.receivedAt }}", "mailLogId": "={{ $json.mailLogId }}"}, "matchingColumns": [], "schema": []}, "options": {"waitForSubWorkflow": true}},
       "id": "execute-openai-analysis",
       "name": "Analyze Mail",
       "type": "n8n-nodes-base.executeWorkflow",
@@ -86,7 +86,7 @@
       "position": [1980, 120]
     },
     {
-      "parameters": {"workflowId": {"__rl": true, "value": "={{ $env.SUPABASE_MAIL_WORKFLOW_ID }}", "mode": "id"}, "options": {"waitForSubWorkflow": true}},
+      "parameters": {"workflowId": {"__rl": true, "value": "={{ $env.API_RETRY_WRAPPER_WORKFLOW_ID }}", "mode": "id"}, "workflowInputs": {"mappingMode": "defineBelow", "value": {"targetWorkflowId": "={{ $env.SUPABASE_MAIL_WORKFLOW_ID }}", "operation": "={{ $json.operation }}", "mailLogId": "={{ $json.mailLogId }}", "summary": "={{ $json.summary }}", "priority": "={{ $json.priority }}", "category": "={{ $json.category }}", "requiresAction": "={{ $json.requiresAction }}", "isSchedule": "={{ $json.isSchedule }}"}, "matchingColumns": [], "schema": []}, "options": {"waitForSubWorkflow": true}},
       "id": "execute-mail-finalize",
       "name": "Finalize Mail",
       "type": "n8n-nodes-base.executeWorkflow",
@@ -103,7 +103,7 @@
       "position": [2420, 60]
     },
     {
-      "parameters": {"workflowId": {"__rl": true, "value": "={{ $env.CALENDAR_REGISTER_WORKFLOW_ID }}", "mode": "id"}, "options": {"waitForSubWorkflow": true}},
+      "parameters": {"workflowId": {"__rl": true, "value": "={{ $env.API_RETRY_WRAPPER_WORKFLOW_ID }}", "mode": "id"}, "workflowInputs": {"mappingMode": "defineBelow", "value": {"targetWorkflowId": "={{ $env.CALENDAR_REGISTER_WORKFLOW_ID }}", "mailLogId": "={{ $json.mailLogId }}", "isSchedule": "={{ $json.isSchedule }}", "event": "={{ $json.event }}"}, "matchingColumns": [], "schema": []}, "options": {"waitForSubWorkflow": true}},
       "id": "execute-calendar-register",
       "name": "Register Calendar",
       "type": "n8n-nodes-base.executeWorkflow",
@@ -112,7 +112,7 @@
       "onError": "continueErrorOutput"
     },
     {
-      "parameters": {"workflowId": {"__rl": true, "value": "={{ $env.OUTLOOK_FETCH_WORKFLOW_ID }}", "mode": "id"}, "options": {"waitForSubWorkflow": true}},
+      "parameters": {"workflowId": {"__rl": true, "value": "={{ $env.API_RETRY_WRAPPER_WORKFLOW_ID }}", "mode": "id"}, "workflowInputs": {"mappingMode": "defineBelow", "value": {"targetWorkflowId": "={{ $env.OUTLOOK_FETCH_WORKFLOW_ID }}"}, "matchingColumns": [], "schema": []}, "options": {"waitForSubWorkflow": true}},
       "id": "execute-outlook-fetch",
       "name": "Fetch Outlook",
       "type": "n8n-nodes-base.executeWorkflow",
@@ -122,7 +122,7 @@
       "onError": "continueErrorOutput"
     },
     {
-      "parameters": {"workflowId": {"__rl": true, "value": "={{ $env.OUTLOOK_NORMALIZE_WORKFLOW_ID }}", "mode": "id"}, "options": {"waitForSubWorkflow": true}},
+      "parameters": {"workflowId": {"__rl": true, "value": "={{ $env.API_RETRY_WRAPPER_WORKFLOW_ID }}", "mode": "id"}, "workflowInputs": {"mappingMode": "defineBelow", "value": {"targetWorkflowId": "={{ $env.OUTLOOK_NORMALIZE_WORKFLOW_ID }}", "id": "={{ $json.id }}", "conversationId": "={{ $json.conversationId }}", "from": "={{ $json.from }}", "subject": "={{ $json.subject }}", "body": "={{ $json.body }}", "receivedDateTime": "={{ $json.receivedDateTime }}"}, "matchingColumns": [], "schema": []}, "options": {"waitForSubWorkflow": true}},
       "id": "execute-outlook-normalize",
       "name": "Normalize Outlook",
       "type": "n8n-nodes-base.executeWorkflow",
@@ -140,7 +140,7 @@
       "position": [440, 340]
     },
     {
-      "parameters": {"workflowId": {"__rl": true, "value": "={{ $env.LINE_DIGEST_WORKFLOW_ID }}", "mode": "id"}, "workflowInputs": {"mappingMode": "defineBelow", "value": {"workflowRunId": "={{ $execution.id }}"}, "matchingColumns": [], "schema": []}, "options": {"waitForSubWorkflow": true}},
+      "parameters": {"workflowId": {"__rl": true, "value": "={{ $env.API_RETRY_WRAPPER_WORKFLOW_ID }}", "mode": "id"}, "workflowInputs": {"mappingMode": "defineBelow", "value": {"targetWorkflowId": "={{ $env.LINE_DIGEST_WORKFLOW_ID }}", "workflowRunId": "={{ $execution.id }}"}, "matchingColumns": [], "schema": []}, "options": {"waitForSubWorkflow": true}},
       "id": "execute-line-digest",
       "name": "Send LINE Digest",
       "type": "n8n-nodes-base.executeWorkflow",
