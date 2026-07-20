@@ -26,8 +26,10 @@ for (const statusCode of [400, 401, 403, 404]) {
   assert.equal(result.retryDecision, 'fail');
 }
 assert.equal(classify({ errorCode: 'ETIMEDOUT', retryAttempt: 2 }).retryDelaySeconds, 2);
-assert.equal(classify({ statusCode: 503, retryAttempt: 3 }).retryExhausted, true);
-assert.equal(classify({ statusCode: 503, retryAttempt: 3 }).shouldRetry, false);
+assert.equal(classify({ statusCode: 503, retryAttempt: 3 }).retryDelaySeconds, 4);
+assert.equal(classify({ statusCode: 503, retryAttempt: 3 }).shouldRetry, true);
+assert.equal(classify({ statusCode: 503, retryAttempt: 4 }).retryExhausted, true);
+assert.equal(classify({ statusCode: 503, retryAttempt: 4 }).shouldRetry, false);
 
 console.log('API retry policy validation passed.');
 
