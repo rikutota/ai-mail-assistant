@@ -12,15 +12,15 @@
     },
     {
       "parameters": {
-        "jsCode": "const row = $json;\nconst highItems = Array.isArray(row.high_items) ? row.high_items : [];\nconst lines = [\n  'AIメールアシスタント 日次ダイジェスト',\n  `処理件数: ${row.total_count ?? 0}`,\n  `重要: ${row.high_count ?? 0} / 通常: ${row.normal_count ?? 0}`,\n  `予定登録: ${row.calendar_created_count ?? 0}`,\n  `簡易エラー: ${row.error_count ?? 0}`,\n];\nif (highItems.length) {\n  lines.push('', '重要メール');\n  for (const item of highItems.slice(0, 10)) {\n    const subject = String(item.subject ?? '(件名なし)').replace(/[\\r\\n]+/g, ' ').slice(0, 80);\n    const summary = String(item.summary ?? '').replace(/[\\r\\n]+/g, ' ').slice(0, 160);\n    lines.push(`- ${subject}${summary ? `: ${summary}` : ''}`);\n  }\n}\nreturn [{ json: { ...row, digestText: lines.join('\\n'), retryKey: String($('Execute Workflow Trigger').item.json.workflowRunId ?? '') } }];"
+        "jsCode": "const row = $json;\nconst highItems = Array.isArray(row.high_items) ? row.high_items : [];\nconst digestDate = new Date(Date.now() + 9 * 60 * 60 * 1000).toISOString().slice(0, 10);\nconst dateDigits = digestDate.replaceAll('-', '');\nconst retryKey = `${dateDigits}-0000-4000-8000-000000000000`;\nconst lines = [\n  'AIメールアシスタント 日次ダイジェスト',\n  `処理件数: ${row.total_count ?? 0}`,\n  `重要: ${row.high_count ?? 0} / 通常: ${row.normal_count ?? 0}`,\n  `予定登録: ${row.calendar_created_count ?? 0}`,\n  `簡易エラー: ${row.error_count ?? 0}`,\n];\nif (highItems.length) {\n  lines.push('', '重要メール');\n  for (const item of highItems.slice(0, 10)) {\n    const subject = String(item.subject ?? '(件名なし)').replace(/[\\r\\n]+/g, ' ').slice(0, 80);\n    const summary = String(item.summary ?? '').replace(/[\\r\\n]+/g, ' ').slice(0, 160);\n    lines.push(`- ${subject}${summary ? `: ${summary}` : ''}`);\n  }\n}\nreturn [{ json: { ...row, digestDate, digestText: lines.join('\\n'), retryKey } }];"
       },
       "id": "build-line-digest", "name": "Build LINE Digest", "type": "n8n-nodes-base.code", "typeVersion": 2, "position": [660, 300]
     },
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT EXISTS (SELECT 1 FROM notification_logs WHERE workflow_run_id = $1 AND channel = 'line' AND status = 'sent') AS already_sent;",
-        "options": {"queryReplacement": "={{ [$('Execute Workflow Trigger').item.json.workflowRunId] }}"}
+        "query": "SELECT EXISTS (SELECT 1 FROM notification_logs WHERE digest_date = $1::date AND channel = 'line' AND status = 'sent') AS already_sent;",
+        "options": {"queryReplacement": "={{ [$('Build LINE Digest').item.json.digestDate] }}"}
       },
       "id": "check-line-digest", "name": "Check Digest Sent", "type": "n8n-nodes-base.postgres", "typeVersion": 2.6, "position": [880, 300]
     },
@@ -51,8 +51,8 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "INSERT INTO notification_logs (workflow_run_id, channel, status, message, sent_at)\nSELECT $1, 'line', 'sent', $2, now()\nWHERE NOT EXISTS (SELECT 1 FROM notification_logs WHERE workflow_run_id = $1 AND channel = 'line' AND status = 'sent')\nRETURNING id, status, sent_at;",
-        "options": {"queryReplacement": "={{ [$('Execute Workflow Trigger').item.json.workflowRunId, $('Build LINE Digest').item.json.digestText] }}"}
+        "query": "INSERT INTO notification_logs (digest_date, channel, status, message, sent_at)\nVALUES ($1::date, 'line', 'sent', $2, now())\nON CONFLICT (channel, digest_date) WHERE channel = 'line' AND status = 'sent' AND digest_date IS NOT NULL DO NOTHING\nRETURNING id, status, sent_at;",
+        "options": {"queryReplacement": "={{ [$('Build LINE Digest').item.json.digestDate, $('Build LINE Digest').item.json.digestText] }}"}
       },
       "id": "store-line-notification", "name": "Store LINE Notification", "type": "n8n-nodes-base.postgres", "typeVersion": 2.6, "position": [1740, 220], "alwaysOutputData": true
     }
