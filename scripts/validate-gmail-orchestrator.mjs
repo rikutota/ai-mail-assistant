@@ -10,6 +10,8 @@ assert.equal(workflow.active, false);
 
 const expected = {
   'Fetch Gmail': 'GMAIL_FETCH_WORKFLOW_ID',
+  'Fetch Outlook': 'OUTLOOK_FETCH_WORKFLOW_ID',
+  'Normalize Outlook': 'OUTLOOK_NORMALIZE_WORKFLOW_ID',
   'Claim Mail': 'SUPABASE_MAIL_WORKFLOW_ID',
   'Analyze Mail': 'OPENAI_ANALYZE_WORKFLOW_ID',
   'Finalize Mail': 'SUPABASE_MAIL_WORKFLOW_ID',
@@ -25,6 +27,8 @@ for (const [name, envName] of Object.entries(expected)) {
 }
 
 assert.equal(nodes.get('Fetch Gmail').onError, 'continueErrorOutput');
+assert.equal(nodes.get('Fetch Outlook').onError, 'continueErrorOutput');
+assert.equal(nodes.get('Normalize Outlook').onError, 'continueErrorOutput');
 assert.equal(nodes.get('Claim Mail').onError, 'continueErrorOutput');
 assert.equal(nodes.get('Analyze Mail').onError, 'continueErrorOutput');
 assert.equal(nodes.get('Finalize Mail').onError, 'continueErrorOutput');
@@ -37,5 +41,10 @@ assert.equal(loop[1][0].node, 'Has Mail?', 'mail items must enter the processing
 assert.equal(workflow.connections['Processing Claimed?'].main[1][0].node, 'Loop Over Mail', 'duplicates must skip AI');
 assert.equal(workflow.connections['Analyze Mail'].main[1][0].node, 'Loop Over Mail', 'AI failure must continue');
 assert.equal(workflow.connections['Register Calendar'].main[1][0].node, 'Loop Over Mail', 'Calendar failure must continue');
+assert.equal(workflow.connections['Fetch Gmail'].main[1][0].node, 'Merge Mail Sources', 'Gmail failure must continue to merge');
+assert.equal(workflow.connections['Fetch Outlook'].main[1][0].node, 'Merge Mail Sources', 'Outlook failure must continue to merge');
+assert.equal(workflow.connections['Fetch Gmail'].main[0][0].index, 0);
+assert.equal(workflow.connections['Normalize Outlook'].main[0][0].index, 1);
+assert.match(nodes.get('Normalize Fetch Result').parameters.jsCode, /gmail.*outlook/);
 
 console.log('Gmail daily orchestrator validation passed.');
