@@ -16,6 +16,8 @@ n8nからエクスポートしたworkflow JSONを配置します。
 | `supabase-store-mail.json` | メール処理権を原子的に確保し、分析結果を保存 | import後に`supabase-postgres-ai-mail-test`を割り当てる |
 | `openai-analyze-email.json` | Responses APIのStructured Outputsでメールを分析 | `OPENAI_API_KEY`を実行環境へ設定する |
 | `gmail-fetch-unread.json` | Inboxの未読・直近24時間メールを取得し共通形式へ正規化 | import後に`gmail-oauth2-ai-mail-test`を割り当てる |
+| `outlook-fetch-unread.json` | Inboxの未読・直近24時間Outlookメールを既読化せず取得 | import後に`microsoft-outlook-oauth2-ai-mail-test`を割り当てる |
+| `outlook-normalize-message.json` | Outlook応答を共通メール形式へ正規化 | 不要 |
 | `purge-expired-logs.json` | JST基準で90日を超えたログを外部キー順に削除 | import後に`supabase-postgres-ai-mail-test`を割り当てる |
 | `line-daily-digest.json` | JST日次でメール結果を集約しLINEへ一度だけ通知 | import後にLINE Header AuthとPostgresの各Credentialを割り当てる |
 

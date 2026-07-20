@@ -1,0 +1,70 @@
+{
+  "name": "Outlook - Fetch Unread Messages",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "outlook-fetch-trigger",
+      "name": "Execute Workflow Trigger",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "microsoftOutlookOAuth2Api",
+        "url": "https://graph.microsoft.com/v1.0/me/mailFolders/inbox/messages",
+        "sendQuery": true,
+        "queryParameters": {"parameters": [
+          {"name": "$select", "value": "id,conversationId,from,subject,body,receivedDateTime,isRead"},
+          {"name": "$filter", "value": "=receivedDateTime ge {{$now.toUTC().minus({ hours: 24 }).toISO()}} and isRead eq false"},
+          {"name": "$orderby", "value": "receivedDateTime desc"},
+          {"name": "$top", "value": "100"}
+        ]},
+        "sendHeaders": true,
+        "headerParameters": {"parameters": [{"name": "Prefer", "value": "outlook.body-content-type=\"text\""}]},
+        "options": {"pagination": {"pagination": {
+          "paginationMode": "responseContainsNextURL",
+          "nextURL": "={{ $response.body['@odata.nextLink'] }}",
+          "limitPagesFetched": true,
+          "maxRequests": 20
+        }}}
+      },
+      "id": "list-outlook-messages",
+      "name": "List Outlook Messages",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [500, 300],
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {"jsCode": "const cutoff = Date.now() - 24 * 60 * 60 * 1000;\nconst messages = $input.all().flatMap((item) => Array.isArray(item.json.value) ? item.json.value : []);\nreturn messages.filter((message) => message.isRead === false && typeof message.receivedDateTime === 'string' && Date.parse(message.receivedDateTime) >= cutoff).map((message) => ({ json: message }));"},
+      "id": "split-outlook-messages",
+      "name": "Split Outlook Messages",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [760, 260]
+    },
+    {
+      "parameters": {"jsCode": "const status = $json.statusCode ?? $json.httpCode ?? 'unknown';\nthrow new Error(`Outlook message retrieval failed (status: ${status})`);"},
+      "id": "sanitize-outlook-error",
+      "name": "Sanitize Outlook Error",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [760, 420]
+    }
+  ],
+  "connections": {
+    "Execute Workflow Trigger": {"main": [[{"node": "List Outlook Messages", "type": "main", "index": 0}]]},
+    "List Outlook Messages": {"main": [
+      [{"node": "Split Outlook Messages", "type": "main", "index": 0}],
+      [{"node": "Sanitize Outlook Error", "type": "main", "index": 0}]
+    ]}
+  },
+  "pinData": {},
+  "settings": {"executionOrder": "v1", "saveDataErrorExecution": "none", "saveDataSuccessExecution": "none", "saveManualExecutions": false, "timezone": "Asia/Tokyo"},
+  "active": false,
+  "versionId": "46003e21-2e73-416f-a853-1d189800106c",
+  "meta": {"templateCredsSetupCompleted": false},
+  "tags": []
+}
