@@ -1,0 +1,98 @@
+{
+  "name": "Google Calendar - Register Validated Event",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "calendar-register-trigger",
+      "name": "Execute Workflow Trigger",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [220, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "return $input.all().map((item) => {\n  const input = item.json;\n  const event = input.event;\n  if (!input.isSchedule) return { json: { ...input, calendarAction: 'skip', calendarReason: 'not_schedule' } };\n  if (!event || typeof event.title !== 'string' || !event.title.trim()) return { json: { ...input, calendarAction: 'skip', calendarReason: 'missing_title' } };\n  const startMs = Date.parse(event.startDateTime);\n  if (Number.isNaN(startMs)) return { json: { ...input, calendarAction: 'skip', calendarReason: 'missing_start_datetime' } };\n  if (typeof input.mailLogId !== 'string' || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(input.mailLogId)) throw new Error('mailLogId must be a UUID');\n  let endMs = event.endDateTime ? Date.parse(event.endDateTime) : startMs + 60 * 60 * 1000;\n  if (Number.isNaN(endMs) || endMs <= startMs) throw new Error('event endDateTime must be after startDateTime');\n  return { json: { ...input, calendarAction: 'register', calendarEventId: `m${input.mailLogId.replaceAll('-', '').toLowerCase()}`, calendarTitle: event.title.trim(), calendarStart: new Date(startMs).toISOString(), calendarEnd: new Date(endMs).toISOString(), calendarLocation: typeof event.location === 'string' ? event.location : '' } };\n});"
+      },
+      "id": "prepare-calendar-event",
+      "name": "Prepare Calendar Event",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [440, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {"options": {"caseSensitive": true, "leftValue": "", "typeValidation": "strict", "version": 2}, "conditions": [{"id": "calendar-action", "leftValue": "={{ $json.calendarAction }}", "rightValue": "register", "operator": {"type": "string", "operation": "equals"}}], "combinator": "and"},
+        "options": {}
+      },
+      "id": "should-register-calendar",
+      "name": "Should Register?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [660, 300]
+    },
+    {
+      "parameters": {
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleCalendarOAuth2Api",
+        "method": "POST",
+        "url": "https://www.googleapis.com/calendar/v3/calendars/primary/events",
+        "sendQuery": true,
+        "queryParameters": {"parameters": [{"name": "sendUpdates", "value": "none"}]},
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ JSON.stringify({ id: $json.calendarEventId, summary: $json.calendarTitle, start: { dateTime: $json.calendarStart, timeZone: 'Asia/Tokyo' }, end: { dateTime: $json.calendarEnd, timeZone: 'Asia/Tokyo' }, location: $json.calendarLocation, extendedProperties: { private: { mailLogId: $json.mailLogId } } }) }}",
+        "options": {"timeout": 60000}
+      },
+      "id": "create-calendar-event",
+      "name": "Create Calendar Event",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [900, 220],
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {"jsCode": "const prepared = $('Prepare Calendar Event').item.json;\nreturn [{ json: { ...prepared, googleEventId: $json.id || prepared.calendarEventId, calendarRecovered: false } }];"},
+      "id": "calendar-created",
+      "name": "Calendar Created",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1140, 160]
+    },
+    {
+      "parameters": {"jsCode": "const status = Number($json.statusCode ?? $json.httpCode ?? $json.error?.statusCode);\nconst prepared = $('Prepare Calendar Event').item.json;\nif (status === 409) return [{ json: { ...prepared, googleEventId: prepared.calendarEventId, calendarRecovered: true } }];\nthrow new Error(`Google Calendar registration failed (status: ${Number.isFinite(status) ? status : 'unknown'})`);"},
+      "id": "handle-calendar-error",
+      "name": "Handle Calendar Error",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1140, 320]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO calendar_logs (mail_log_id, google_event_id, title, start_datetime, end_datetime, location, status)\nSELECT $1, $2, $3, $4, $5, $6, 'created'\nWHERE NOT EXISTS (\n  SELECT 1 FROM calendar_logs WHERE mail_log_id = $1 AND status = 'created'\n)\nRETURNING id, mail_log_id, google_event_id, status;",
+        "options": {"queryReplacement": "={{ [$json.mailLogId, $json.googleEventId, $json.calendarTitle, $json.calendarStart, $json.calendarEnd, $json.calendarLocation || null] }}"}
+      },
+      "id": "store-calendar-log",
+      "name": "Store Calendar Log",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [1380, 240],
+      "alwaysOutputData": true
+    }
+  ],
+  "connections": {
+    "Execute Workflow Trigger": {"main": [[{"node": "Prepare Calendar Event", "type": "main", "index": 0}]]},
+    "Prepare Calendar Event": {"main": [[{"node": "Should Register?", "type": "main", "index": 0}]]},
+    "Should Register?": {"main": [[{"node": "Create Calendar Event", "type": "main", "index": 0}], []]},
+    "Create Calendar Event": {"main": [[{"node": "Calendar Created", "type": "main", "index": 0}], [{"node": "Handle Calendar Error", "type": "main", "index": 0}]]},
+    "Calendar Created": {"main": [[{"node": "Store Calendar Log", "type": "main", "index": 0}]]},
+    "Handle Calendar Error": {"main": [[{"node": "Store Calendar Log", "type": "main", "index": 0}]]}
+  },
+  "pinData": {},
+  "settings": {"executionOrder": "v1", "saveDataErrorExecution": "none", "saveDataSuccessExecution": "none", "saveManualExecutions": false, "timezone": "Asia/Tokyo"},
+  "active": false,
+  "versionId": "b773416a-4b02-4d31-9780-d5b88ea482ad",
+  "meta": {"templateCredsSetupCompleted": false},
+  "tags": []
+}
