@@ -1,0 +1,9 @@
+{
+  "id": "fixture-outlook-promotion-001",
+  "conversationId": null,
+  "from": {"emailAddress": {"name": "テストストア", "address": "store@example.test"}},
+  "subject": "期間限定キャンペーン",
+  "body": {"contentType": "text", "content": "検証用キャンペーンのお知らせです。対応は不要です。"},
+  "receivedDateTime": "2026-07-18T00:15:00Z",
+  "isRead": false
+}
