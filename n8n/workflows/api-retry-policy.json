@@ -1,0 +1,32 @@
+{
+  "name": "Common - Classify API Retry",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "api-retry-trigger",
+      "name": "Execute Workflow Trigger",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [220, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "return $input.all().map((item) => {\n  const input = item.json;\n  const attempt = Number(input.retryAttempt ?? 1);\n  if (!Number.isInteger(attempt) || attempt < 1) throw new Error('retryAttempt must be a positive integer');\n  const rawStatus = input.statusCode ?? input.httpCode ?? input.error?.statusCode ?? input.error?.httpCode;\n  const statusCode = Number(rawStatus);\n  const errorCode = String(input.errorCode ?? input.code ?? input.error?.code ?? '').toUpperCase();\n  const safeMessage = String(input.errorSummary ?? input.error?.message ?? input.message ?? '').toLowerCase();\n  const timeout = ['ETIMEDOUT', 'ESOCKETTIMEDOUT', 'ECONNRESET'].includes(errorCode) || /timed? ?out|timeout/.test(safeMessage);\n  const transientStatus = statusCode === 429 || (statusCode >= 500 && statusCode <= 599);\n  const retryable = timeout || transientStatus;\n  const maxAttempts = 3;\n  const shouldRetry = retryable && attempt < maxAttempts;\n  return { json: {\n    ...input,\n    statusCode: Number.isFinite(statusCode) ? statusCode : null,\n    retryAttempt: attempt,\n    nextRetryAttempt: shouldRetry ? attempt + 1 : null,\n    retryDelaySeconds: shouldRetry ? 2 ** (attempt - 1) : 0,\n    retryable,\n    shouldRetry,\n    retryExhausted: retryable && attempt >= maxAttempts,\n    retryDecision: shouldRetry ? 'retry' : 'fail'\n  } };\n});"
+      },
+      "id": "classify-api-retry",
+      "name": "Classify Retry",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [460, 300]
+    }
+  ],
+  "connections": {
+    "Execute Workflow Trigger": {"main": [[{"node": "Classify Retry", "type": "main", "index": 0}]]}
+  },
+  "pinData": {},
+  "settings": {"executionOrder": "v1", "saveDataErrorExecution": "none", "saveDataSuccessExecution": "none", "saveManualExecutions": false, "timezone": "Asia/Tokyo"},
+  "active": false,
+  "versionId": "dcbcd71c-ac15-45bc-9178-8fc118d76472",
+  "meta": {"templateCredsSetupCompleted": false},
+  "tags": []
+}
